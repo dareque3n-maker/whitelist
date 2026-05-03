@@ -7,7 +7,9 @@ const {
   ActionRowBuilder,
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  PermissionsBitField,
+  ChannelType
 } = require("discord.js");
 
 const config = require("./config.json");
@@ -29,7 +31,7 @@ client.once("ready", () => {
 
 
 // =========================
-// SETUP COMMAND
+// PANEL SETUP COMMAND
 // =========================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -41,12 +43,10 @@ client.on("messageCreate", async (message) => {
       .setDescription(`
 🎮 Welcome to **Sparkle SMP**
 
-To join the server, apply for whitelist below.
+Click below to apply for whitelist.
 
-⚠️ **Important Rules:**
-- Pocket Edition players must use "_" before name  
-  Example: **_steve**
-- Make sure username is correct before submitting
+⚠ Rules:
+- Pocket Edition players must use "_" (Example: _steve)
 - Fake applications will be rejected
 `)
       .setColor("Green");
@@ -64,16 +64,18 @@ To join the server, apply for whitelist below.
 
 
 // =========================
-// BUTTON CLICK → MODAL
+// INTERACTIONS
 // =========================
 client.on("interactionCreate", async (interaction) => {
 
-  // APPLY BUTTON
+  // =========================
+  // APPLY BUTTON → MODAL
+  // =========================
   if (interaction.isButton() && interaction.customId === "apply_whitelist") {
 
     const modal = new ModalBuilder()
       .setCustomId("whitelist_form")
-      .setTitle("Sparkle SMP Application Form");
+      .setTitle("Sparkle SMP Application");
 
     const mcname = new TextInputBuilder()
       .setCustomId("mcname")
@@ -97,7 +99,7 @@ client.on("interactionCreate", async (interaction) => {
 
 
   // =========================
-  // MODAL SUBMIT
+  // MODAL SUBMIT → TICKET
   // =========================
   if (interaction.isModalSubmit() && interaction.customId === "whitelist_form") {
 
@@ -106,33 +108,52 @@ client.on("interactionCreate", async (interaction) => {
 
     console.log("📌 MC NAME:", mcname);
 
-    // Ticket embed
+    // ✅ CREATE TICKET CHANNEL
+    const ticketChannel = await interaction.guild.channels.create({
+      name: `ticket-${interaction.user.username}`,
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel]
+        },
+        {
+          id: interaction.user.id,
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.ReadMessageHistory
+          ]
+        }
+      ]
+    });
+
     const embed = new EmbedBuilder()
-      .setTitle("📩 Whitelist Request Ticket")
+      .setTitle("📩 Whitelist Ticket")
+      .setColor("Blue")
       .addFields(
         { name: "🎮 Minecraft Username", value: mcname },
         { name: "💰 Payment Status", value: payment },
         { name: "👤 User", value: interaction.user.tag }
-      )
-      .setColor("Blue");
+      );
 
     const approve = new ButtonBuilder()
-      .setCustomId(`approve_${interaction.user.id}`)
+      .setCustomId(`approve_${mcname}`)
       .setLabel("Approve")
       .setStyle(ButtonStyle.Success);
 
     const reject = new ButtonBuilder()
-      .setCustomId(`reject_${interaction.user.id}`)
+      .setCustomId(`reject_${mcname}`)
       .setLabel("Reject")
       .setStyle(ButtonStyle.Danger);
 
     const row = new ActionRowBuilder().addComponents(approve, reject);
 
-    // send ticket in same channel
+    await ticketChannel.send({ embeds: [embed], components: [row] });
+
     await interaction.reply({
-      embeds: [embed],
-      components: [row],
-      ephemeral: false
+      content: `🎟 Ticket created: ${ticketChannel}`,
+      ephemeral: true
     });
   }
 
@@ -145,14 +166,7 @@ client.on("interactionCreate", async (interaction) => {
     // APPROVE
     if (interaction.customId.startsWith("approve_")) {
 
-      const userId = interaction.customId.split("_")[1];
-
-      // fetch last message embed
-      const messages = await interaction.channel.messages.fetch({ limit: 1 });
-      const embed = messages.first().embeds[0];
-
-      const mcnameField = embed.fields.find(f => f.name.includes("Minecraft"));
-      const mcname = mcnameField.value;
+      const mcname = interaction.customId.replace("approve_", "");
 
       const consoleChannel = await client.channels.fetch(config.consoleChannelId);
 
