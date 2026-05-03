@@ -24,7 +24,7 @@ const client = new Client({
 });
 
 client.once("ready", () => {
-  console.log(`✨ Sparkle SMP Nexus Online: ${client.user.tag}`);
+  console.log(`✨ ShadowMc Nexus Online: ${client.user.tag}`);
 });
 
 
