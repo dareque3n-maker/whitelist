@@ -8,8 +8,8 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  PermissionsBitField,
-  ChannelType
+  ChannelType,
+  PermissionsBitField
 } = require("discord.js");
 
 const config = require("./config.json");
@@ -18,20 +18,18 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
   ]
 });
 
-// =========================
-// BOT READY
-// =========================
 client.once("ready", () => {
-  console.log(`✅ Sparkle SMP Bot Online: ${client.user.tag}`);
+  console.log(`✅ Bot Online: ${client.user.tag}`);
 });
 
 
 // =========================
-// PANEL SETUP COMMAND
+// SETUP PANEL
 // =========================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -41,22 +39,19 @@ client.on("messageCreate", async (message) => {
     const embed = new EmbedBuilder()
       .setTitle("🔥 Sparkle SMP Whitelist System")
       .setDescription(`
-🎮 Welcome to **Sparkle SMP**
-
-Click below to apply for whitelist.
+🎮 Apply for whitelist below
 
 ⚠ Rules:
-- Pocket Edition players must use "_" (Example: _steve)
-- Fake applications will be rejected
+- Pocket players use "_" (Example: _steve)
 `)
       .setColor("Green");
 
-    const button = new ButtonBuilder()
+    const btn = new ButtonBuilder()
       .setCustomId("apply_whitelist")
-      .setLabel("Apply for Whitelist")
+      .setLabel("Apply Now")
       .setStyle(ButtonStyle.Success);
 
-    const row = new ActionRowBuilder().addComponents(button);
+    const row = new ActionRowBuilder().addComponents(btn);
 
     message.channel.send({ embeds: [embed], components: [row] });
   }
@@ -68,14 +63,12 @@ Click below to apply for whitelist.
 // =========================
 client.on("interactionCreate", async (interaction) => {
 
-  // =========================
-  // APPLY BUTTON → MODAL
-  // =========================
+  // APPLY BUTTON
   if (interaction.isButton() && interaction.customId === "apply_whitelist") {
 
     const modal = new ModalBuilder()
       .setCustomId("whitelist_form")
-      .setTitle("Sparkle SMP Application");
+      .setTitle("Whitelist Application");
 
     const mcname = new TextInputBuilder()
       .setCustomId("mcname")
@@ -85,31 +78,29 @@ client.on("interactionCreate", async (interaction) => {
 
     const payment = new TextInputBuilder()
       .setCustomId("payment")
-      .setLabel("Payment Status (Paid / Pending)")
+      .setLabel("Payment Status")
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
-    const row1 = new ActionRowBuilder().addComponents(mcname);
-    const row2 = new ActionRowBuilder().addComponents(payment);
-
-    modal.addComponents(row1, row2);
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(mcname),
+      new ActionRowBuilder().addComponents(payment)
+    );
 
     await interaction.showModal(modal);
   }
 
 
   // =========================
-  // MODAL SUBMIT → TICKET
+  // FORM SUBMIT → TICKET
   // =========================
   if (interaction.isModalSubmit() && interaction.customId === "whitelist_form") {
 
     const mcname = interaction.fields.getTextInputValue("mcname");
     const payment = interaction.fields.getTextInputValue("payment");
 
-    console.log("📌 MC NAME:", mcname);
-
-    // ✅ CREATE TICKET CHANNEL
-    const ticketChannel = await interaction.guild.channels.create({
+    // CREATE TICKET CHANNEL
+    const ticket = await interaction.guild.channels.create({
       name: `ticket-${interaction.user.username}`,
       type: ChannelType.GuildText,
       permissionOverwrites: [
@@ -130,29 +121,29 @@ client.on("interactionCreate", async (interaction) => {
 
     const embed = new EmbedBuilder()
       .setTitle("📩 Whitelist Ticket")
-      .setColor("Blue")
       .addFields(
-        { name: "🎮 Minecraft Username", value: mcname },
-        { name: "💰 Payment Status", value: payment },
-        { name: "👤 User", value: interaction.user.tag }
-      );
+        { name: "Minecraft Username", value: mcname },
+        { name: "Payment", value: payment },
+        { name: "User", value: interaction.user.tag }
+      )
+      .setColor("Blue");
 
     const approve = new ButtonBuilder()
-      .setCustomId(`approve_${mcname}`)
+      .setCustomId(`approve_${interaction.user.id}`)
       .setLabel("Approve")
       .setStyle(ButtonStyle.Success);
 
     const reject = new ButtonBuilder()
-      .setCustomId(`reject_${mcname}`)
+      .setCustomId(`reject_${interaction.user.id}`)
       .setLabel("Reject")
       .setStyle(ButtonStyle.Danger);
 
     const row = new ActionRowBuilder().addComponents(approve, reject);
 
-    await ticketChannel.send({ embeds: [embed], components: [row] });
+    await ticket.send({ embeds: [embed], components: [row] });
 
     await interaction.reply({
-      content: `🎟 Ticket created: ${ticketChannel}`,
+      content: `🎟 Ticket created: ${ticket}`,
       ephemeral: true
     });
   }
@@ -163,21 +154,55 @@ client.on("interactionCreate", async (interaction) => {
   // =========================
   if (interaction.isButton()) {
 
+    const logChannel = await client.channels.fetch(config.logChannelId).catch(() => null);
+
     // APPROVE
     if (interaction.customId.startsWith("approve_")) {
 
-      const mcname = interaction.customId.replace("approve_", "");
+      const userId = interaction.customId.split("_")[1];
+      const mcname = interaction.message.embeds[0].fields[0].value;
 
       const consoleChannel = await client.channels.fetch(config.consoleChannelId);
 
+      // send to minecraft console
       await consoleChannel.send(`whitelist add ${mcname}`);
 
-      await interaction.reply(`✅ Whitelisted: **${mcname}**`);
+      // DM user
+      const user = await client.users.fetch(userId);
+      user.send(`✅ Your whitelist request approved for: ${mcname}`);
+
+      // log
+      if (logChannel) {
+        logChannel.send(`🟢 APPROVED: ${mcname} by <@${interaction.user.id}>`);
+      }
+
+      await interaction.reply("✅ Approved & Whitelisted");
+
+      // auto delete ticket
+      setTimeout(() => {
+        interaction.channel.delete().catch(() => {});
+      }, 3000);
     }
+
 
     // REJECT
     if (interaction.customId.startsWith("reject_")) {
-      await interaction.reply("❌ Application Rejected");
+
+      const userId = interaction.customId.split("_")[1];
+      const mcname = interaction.message.embeds[0].fields[0].value;
+
+      const user = await client.users.fetch(userId);
+      user.send(`❌ Your whitelist request was rejected.`);
+
+      if (logChannel) {
+        logChannel.send(`🔴 REJECTED: ${mcname} by <@${interaction.user.id}>`);
+      }
+
+      await interaction.reply("❌ Rejected");
+
+      setTimeout(() => {
+        interaction.channel.delete().catch(() => {});
+      }, 3000);
     }
   }
 });
