@@ -37,7 +37,7 @@ client.on("messageCreate", async (message) => {
   if (message.content === "/whitelist setup") {
 
     const embed = new EmbedBuilder()
-      .setTitle("⚡ Sparkle SMP Nexus Whitelist Gate")
+      .setTitle("⚡ ShadowMc Nexus Whitelist Gate")
       .setDescription(`
 🎮 **Access Whitelist System**
 
@@ -199,7 +199,7 @@ client.on("interactionCreate", async (interaction) => {
 
       const user = await client.users.fetch(userId).catch(() => null);
       if (user) {
-        user.send(`🎉 Congratulations! You are now whitelisted on **Sparkle SMP** as **${mcname}** ✔`).catch(() => {});
+        user.send(`🎉 Congratulations! You are now whitelisted on **ShadowMc** as **${mcname}** ✔`).catch(() => {});
       }
 
       if (logChannel && logChannel.isTextBased()) {
