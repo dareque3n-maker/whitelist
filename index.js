@@ -23,13 +23,16 @@ const client = new Client({
   ]
 });
 
+// =========================
+// READY
+// =========================
 client.once("ready", () => {
   console.log(`✅ Bot Online: ${client.user.tag}`);
 });
 
 
 // =========================
-// SETUP PANEL
+// SETUP COMMAND
 // =========================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -42,7 +45,7 @@ client.on("messageCreate", async (message) => {
 🎮 Apply for whitelist below
 
 ⚠ Rules:
-- Pocket players use "_" (Example: _steve)
+- Pocket Edition players must use "_" (Example: _steve)
 `)
       .setColor("Green");
 
@@ -63,7 +66,9 @@ client.on("messageCreate", async (message) => {
 // =========================
 client.on("interactionCreate", async (interaction) => {
 
+  // =========================
   // APPLY BUTTON
+  // =========================
   if (interaction.isButton() && interaction.customId === "apply_whitelist") {
 
     const modal = new ModalBuilder()
@@ -99,7 +104,6 @@ client.on("interactionCreate", async (interaction) => {
     const mcname = interaction.fields.getTextInputValue("mcname");
     const payment = interaction.fields.getTextInputValue("payment");
 
-    // CREATE TICKET CHANNEL
     const ticket = await interaction.guild.channels.create({
       name: `ticket-${interaction.user.username}`,
       type: ChannelType.GuildText,
@@ -121,12 +125,12 @@ client.on("interactionCreate", async (interaction) => {
 
     const embed = new EmbedBuilder()
       .setTitle("📩 Whitelist Ticket")
+      .setColor("Blue")
       .addFields(
         { name: "Minecraft Username", value: mcname },
         { name: "Payment", value: payment },
         { name: "User", value: interaction.user.tag }
-      )
-      .setColor("Blue");
+      );
 
     const approve = new ButtonBuilder()
       .setCustomId(`approve_${interaction.user.id}`)
@@ -150,52 +154,70 @@ client.on("interactionCreate", async (interaction) => {
 
 
   // =========================
-  // APPROVE / REJECT
+  // APPROVE / REJECT SYSTEM
   // =========================
   if (interaction.isButton()) {
 
+    // 🔒 ADMIN CHECK (IMPORTANT)
+    if (
+      interaction.customId.startsWith("approve_") ||
+      interaction.customId.startsWith("reject_")
+    ) {
+      if (!interaction.member.roles.cache.has(config.adminRoleId)) {
+        return interaction.reply({
+          content: "❌ Only staff can use this.",
+          ephemeral: true
+        });
+      }
+    }
+
     const logChannel = await client.channels.fetch(config.logChannelId).catch(() => null);
 
+    // =========================
     // APPROVE
+    // =========================
     if (interaction.customId.startsWith("approve_")) {
 
       const userId = interaction.customId.split("_")[1];
       const mcname = interaction.message.embeds[0].fields[0].value;
 
       const consoleChannel = await client.channels.fetch(config.consoleChannelId);
-
-      // send to minecraft console
       await consoleChannel.send(`whitelist add ${mcname}`);
 
-      // DM user
-      const user = await client.users.fetch(userId);
-      user.send(`✅ Your whitelist request approved for: ${mcname}`);
+      // DM USER
+      const user = await client.users.fetch(userId).catch(() => null);
+      if (user) {
+        user.send(`✅ Your whitelist request approved for: **${mcname}**`).catch(() => {});
+      }
 
-      // log
-      if (logChannel) {
-        logChannel.send(`🟢 APPROVED: ${mcname} by <@${interaction.user.id}>`);
+      // LOG
+      if (logChannel && logChannel.isTextBased()) {
+        logChannel.send(`🟢 APPROVED: **${mcname}** by <@${interaction.user.id}>`);
       }
 
       await interaction.reply("✅ Approved & Whitelisted");
 
-      // auto delete ticket
       setTimeout(() => {
         interaction.channel.delete().catch(() => {});
       }, 3000);
     }
 
 
+    // =========================
     // REJECT
+    // =========================
     if (interaction.customId.startsWith("reject_")) {
 
       const userId = interaction.customId.split("_")[1];
       const mcname = interaction.message.embeds[0].fields[0].value;
 
-      const user = await client.users.fetch(userId);
-      user.send(`❌ Your whitelist request was rejected.`);
+      const user = await client.users.fetch(userId).catch(() => null);
+      if (user) {
+        user.send(`❌ Your whitelist request was rejected for: **${mcname}**`).catch(() => {});
+      }
 
-      if (logChannel) {
-        logChannel.send(`🔴 REJECTED: ${mcname} by <@${interaction.user.id}>`);
+      if (logChannel && logChannel.isTextBased()) {
+        logChannel.send(`🔴 REJECTED: **${mcname}** by <@${interaction.user.id}>`);
       }
 
       await interaction.reply("❌ Rejected");
