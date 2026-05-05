@@ -24,7 +24,7 @@ const client = new Client({
 });
 
 client.once("ready", () => {
-  console.log(`✨ Sparkle SMP Nexus Online: ${client.user.tag}`);
+  console.log(`✅ ShadowMc Bot Online: ${client.user.tag}`);
 });
 
 
@@ -37,29 +37,31 @@ client.on("messageCreate", async (message) => {
   if (message.content === "/whitelist setup") {
 
     const embed = new EmbedBuilder()
-      .setTitle("⚡ Sparkle SMP Nexus Whitelist Gate")
+      .setTitle("⚡ ShadowMc Whitelist Gate")
       .setDescription(`
-🎮 **Access Whitelist System**
+💰 Fee: **₹35**
 
-💰 Fee: **₹35 Only (Fixed)**
+⚠ Rules:
+• Pocket Edition:
+  ❌ STEVE PRO  
+  ✔ _STEVE_PRO  
 
-⚠ Guidelines:
-• Pocket Edition users must use "_" prefix  
-• Example: _steve  
-• Fake payment or wrong info = instant reject  
+📌 Payment Status:
+Confirm / Pending / Incomplete  
 
-🚀 Click below to begin verification
+🔐 Enter the code given after payment
 `)
       .setColor("Gold");
 
     const btn = new ButtonBuilder()
-      .setCustomId("apply_whitelist")
+      .setCustomId("apply")
       .setLabel("Start Verification")
       .setStyle(ButtonStyle.Success);
 
-    const row = new ActionRowBuilder().addComponents(btn);
-
-    message.channel.send({ embeds: [embed], components: [row] });
+    message.channel.send({
+      embeds: [embed],
+      components: [new ActionRowBuilder().addComponents(btn)]
+    });
   }
 });
 
@@ -69,164 +71,153 @@ client.on("messageCreate", async (message) => {
 // =========================
 client.on("interactionCreate", async (interaction) => {
 
-  // =========================
   // APPLY BUTTON
-  // =========================
-  if (interaction.isButton() && interaction.customId === "apply_whitelist") {
+  if (interaction.isButton() && interaction.customId === "apply") {
 
     const modal = new ModalBuilder()
-      .setCustomId("whitelist_form")
-      .setTitle("Nexus Verification Form");
+      .setCustomId("form")
+      .setTitle("ShadowMc Verification");
 
     const mcname = new TextInputBuilder()
-      .setCustomId("mcname")
+      .setCustomId("mc")
       .setLabel("Minecraft Username")
-      .setPlaceholder("Example: _steve or alex")
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
     const payment = new TextInputBuilder()
-      .setCustomId("payment")
-      .setLabel("Payment Status (Enter TXN / Paid / UPI Ref)")
-      .setPlaceholder("Must prove ₹35 payment")
-      .setStyle(TextInputStyle.Paragraph)
+      .setCustomId("pay")
+      .setLabel("Payment Status (Confirm/Pending/Incomplete)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const code = new TextInputBuilder()
+      .setCustomId("code")
+      .setLabel("Verification Code")
+      .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
     modal.addComponents(
       new ActionRowBuilder().addComponents(mcname),
-      new ActionRowBuilder().addComponents(payment)
+      new ActionRowBuilder().addComponents(payment),
+      new ActionRowBuilder().addComponents(code)
     );
 
-    await interaction.showModal(modal);
+    return interaction.showModal(modal);
   }
-
 
   // =========================
   // FORM SUBMIT
   // =========================
-  if (interaction.isModalSubmit() && interaction.customId === "whitelist_form") {
+  if (interaction.isModalSubmit() && interaction.customId === "form") {
 
-    const mcname = interaction.fields.getTextInputValue("mcname").trim();
-    const paymentRaw = interaction.fields.getTextInputValue("payment").toLowerCase();
+    const mcname = interaction.fields.getTextInputValue("mc").trim();
+    const payment = interaction.fields.getTextInputValue("pay").toLowerCase();
+    const code = interaction.fields.getTextInputValue("code").trim();
 
-    // =========================
-    // PAYMENT VALIDATION
-    // =========================
-    const paymentKeywords = ["paid", "35", "35rs", "35₹", "done", "success", "upi", "txn"];
+    const validPayment = ["confirm", "pending", "incomplete"].includes(payment);
+    const codeValid = code === config.paymentCode;
 
-    let paymentVerified = paymentKeywords.some(k => paymentRaw.includes(k));
+    let status = "⚠ Payment Not Confirmed";
+    let color = "Orange";
 
-    // TICKET
+    if (validPayment && payment === "confirm" && codeValid) {
+      status = "✔ Payment Verified (₹35 Confirmed)";
+      color = "Green";
+    } else if (!codeValid) {
+      status = "❌ Invalid Verification Code";
+      color = "Red";
+    }
+
     const ticket = await interaction.guild.channels.create({
       name: `verify-${interaction.user.username}`,
       type: ChannelType.GuildText,
       permissionOverwrites: [
-        {
-          id: interaction.guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel]
-        },
+        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
         {
           id: interaction.user.id,
           allow: [
             PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.ReadMessageHistory
+            PermissionsBitField.Flags.SendMessages
           ]
         }
       ]
     });
 
     const embed = new EmbedBuilder()
-      .setTitle("🔐 Nexus Verification Ticket")
-      .setColor(paymentVerified ? "Green" : "Red")
+      .setTitle("🔐 ShadowMc Verification Ticket")
+      .setColor(color)
       .addFields(
         { name: "🎮 Username", value: mcname },
-        { name: "💰 Payment Check", value: paymentRaw },
-        { name: "📌 Status", value: paymentVerified ? "✔ Payment Detected (₹35 Confirmed)" : "❌ Payment Not Verified" }
-      )
-      .setFooter({ text: "Staff will verify & approve manually" });
+        { name: "💰 Payment", value: payment },
+        { name: "🔑 Code", value: codeValid ? "✔ Correct" : "❌ Wrong" },
+        { name: "📌 Status", value: status }
+      );
 
     const approve = new ButtonBuilder()
       .setCustomId(`approve_${interaction.user.id}`)
-      .setLabel("APPROVE")
+      .setLabel("Approve")
       .setStyle(ButtonStyle.Success);
 
     const reject = new ButtonBuilder()
       .setCustomId(`reject_${interaction.user.id}`)
-      .setLabel("REJECT")
+      .setLabel("Reject")
       .setStyle(ButtonStyle.Danger);
 
-    const row = new ActionRowBuilder().addComponents(approve, reject);
-
-    await ticket.send({ embeds: [embed], components: [row] });
+    await ticket.send({
+      embeds: [embed],
+      components: [new ActionRowBuilder().addComponents(approve, reject)]
+    });
 
     await interaction.reply({
-      content: `⚡ Verification started: ${ticket}`,
+      content: `🎟 Ticket created: ${ticket}`,
       ephemeral: true
     });
   }
-
 
   // =========================
   // APPROVE / REJECT
   // =========================
   if (interaction.isButton()) {
 
-    if (
-      interaction.customId.startsWith("approve_") ||
-      interaction.customId.startsWith("reject_")
-    ) {
-      if (!interaction.member.roles.cache.has(config.adminRoleId)) {
-        return interaction.reply({
-          content: "❌ Staff only system.",
-          ephemeral: true
-        });
-      }
+    if (!interaction.member.roles.cache.has(config.adminRoleId)) {
+      return interaction.reply({ content: "❌ Staff only", ephemeral: true });
     }
 
     const logChannel = await client.channels.fetch(config.logChannelId).catch(() => null);
 
-    // =========================
-    // APPROVE
-    // =========================
-    if (interaction.customId.startsWith("approve_")) {
+    const userId = interaction.customId.split("_")[1];
+    const mcname = interaction.message.embeds[0].fields[0].value;
 
-      const userId = interaction.customId.split("_")[1];
-      const mcname = interaction.message.embeds[0].fields[0].value;
+    const user = await client.users.fetch(userId).catch(() => null);
+
+    // APPROVE
+    if (interaction.customId.startsWith("approve_")) {
 
       const consoleChannel = await client.channels.fetch(config.consoleChannelId);
       await consoleChannel.send(`whitelist add ${mcname}`);
 
-      const user = await client.users.fetch(userId).catch(() => null);
       if (user) {
-        user.send(`🎉 Congratulations! You are now whitelisted on **Sparkle SMP** as **${mcname}** ✔`).catch(() => {});
+        user.send(`🎉 You are whitelisted on ShadowMc as **${mcname}**`).catch(() => {});
       }
 
-      if (logChannel && logChannel.isTextBased()) {
-        logChannel.send(`🟢 VERIFIED: **${mcname}** approved by <@${interaction.user.id}>`);
+      if (logChannel) {
+        logChannel.send(`🟢 Approved: ${mcname} by <@${interaction.user.id}>`);
       }
 
-      await interaction.reply("✔ Approved & Whitelisted");
+      await interaction.reply("✅ Approved");
 
       setTimeout(() => interaction.channel.delete().catch(() => {}), 3000);
     }
 
-
-    // =========================
     // REJECT
-    // =========================
     if (interaction.customId.startsWith("reject_")) {
 
-      const userId = interaction.customId.split("_")[1];
-      const mcname = interaction.message.embeds[0].fields[0].value;
-
-      const user = await client.users.fetch(userId).catch(() => null);
       if (user) {
-        user.send(`❌ Sorry! Your whitelist request was rejected for **${mcname}**`).catch(() => {});
+        user.send(`❌ Your request was rejected`).catch(() => {});
       }
 
-      if (logChannel && logChannel.isTextBased()) {
-        logChannel.send(`🔴 REJECTED: **${mcname}** by <@${interaction.user.id}>`);
+      if (logChannel) {
+        logChannel.send(`🔴 Rejected: ${mcname} by <@${interaction.user.id}>`);
       }
 
       await interaction.reply("❌ Rejected");
