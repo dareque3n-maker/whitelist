@@ -45,7 +45,7 @@ client.on("messageCreate", async (message) => {
 
 ⚠ Guidelines:
 • Pocket Edition users must use "_" prefix  
-• Example: STEVE OG WRONG ❌ | _STEVE_OG ✅
+• Example: STEVE OG | _STEVE_OG 
 • Fake payment or wrong info = instant reject  
 
 🚀 Click below to begin verification
