@@ -45,7 +45,7 @@ client.on("messageCreate", async (message) => {
 
 ⚠ Guidelines:
 • Pocket Edition users must use "_" prefix  
-• Example: _steve  
+• Example: STEVE OG WRONG ❌ | _STEVE_OG
 • Fake payment or wrong info = instant reject  
 
 🚀 Click below to begin verification
@@ -87,7 +87,7 @@ client.on("interactionCreate", async (interaction) => {
 
     const payment = new TextInputBuilder()
       .setCustomId("payment")
-      .setLabel("Payment Status (Enter TXN / Paid / UPI Ref)")
+      .setLabel("Payment Status (Enter Confirm / Done / Pending / Half)")
       .setPlaceholder("Must prove ₹35 payment")
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(true);
@@ -112,7 +112,7 @@ client.on("interactionCreate", async (interaction) => {
     // =========================
     // PAYMENT VALIDATION
     // =========================
-    const paymentKeywords = ["paid", "35", "35rs", "35₹", "done", "success", "upi", "txn"];
+    const paymentKeywords = ["Confirm", "35", "35rs", "35₹", "Done", "success", "upi", "txn"];
 
     let paymentVerified = paymentKeywords.some(k => paymentRaw.includes(k));
 
