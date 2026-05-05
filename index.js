@@ -24,7 +24,7 @@ const client = new Client({
 });
 
 client.once("ready", () => {
-  console.log(`✨ ShadowMc Nexus Online: ${client.user.tag}`);
+  console.log(`✨ Sparkle SMP Nexus Online: ${client.user.tag}`);
 });
 
 
@@ -37,7 +37,7 @@ client.on("messageCreate", async (message) => {
   if (message.content === "/whitelist setup") {
 
     const embed = new EmbedBuilder()
-      .setTitle("⚡ ShadowMc Nexus Whitelist Gate")
+      .setTitle("⚡ Sparkle SMP Nexus Whitelist Gate")
       .setDescription(`
 🎮 **Access Whitelist System**
 
@@ -45,7 +45,7 @@ client.on("messageCreate", async (message) => {
 
 ⚠ Guidelines:
 • Pocket Edition users must use "_" prefix  
-• Example: STEVE OG | _STEVE_OG 
+• Example: _steve  
 • Fake payment or wrong info = instant reject  
 
 🚀 Click below to begin verification
@@ -87,7 +87,7 @@ client.on("interactionCreate", async (interaction) => {
 
     const payment = new TextInputBuilder()
       .setCustomId("payment")
-      .setLabel("Payment Status (Enter Confirm / Done / Pending / Half)")
+      .setLabel("Payment Status (Enter TXN / Paid / UPI Ref)")
       .setPlaceholder("Must prove ₹35 payment")
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(true);
@@ -112,7 +112,7 @@ client.on("interactionCreate", async (interaction) => {
     // =========================
     // PAYMENT VALIDATION
     // =========================
-    const paymentKeywords = ["Confirm", "35", "35rs", "35₹", "Done", "success", "upi", "txn"];
+    const paymentKeywords = ["paid", "35", "35rs", "35₹", "done", "success", "upi", "txn"];
 
     let paymentVerified = paymentKeywords.some(k => paymentRaw.includes(k));
 
@@ -199,7 +199,7 @@ client.on("interactionCreate", async (interaction) => {
 
       const user = await client.users.fetch(userId).catch(() => null);
       if (user) {
-        user.send(`🎉 Congratulations! You are now whitelisted on **ShadowMc** as **${mcname}** ✔`).catch(() => {});
+        user.send(`🎉 Congratulations! You are now whitelisted on **Sparkle SMP** as **${mcname}** ✔`).catch(() => {});
       }
 
       if (logChannel && logChannel.isTextBased()) {
