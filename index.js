@@ -43,12 +43,15 @@ client.on("messageCreate", async (message) => {
 💰 Fee: **₹35**
 
 ⚠ Rules:
-• Java Edition:
+
+💻 Java Edition:
 ✔ Example: Notch
 
-• Pocket Edition:
-❌ STEVE PRO
-✔ _STEVE_PRO
+📱 Bedrock / Pocket Edition:
+• Join the server once before applying
+
+✔ Example:
+FZ B0Y
 
 📌 Payment Status:
 Confirm / Pending / Incomplete
@@ -90,7 +93,7 @@ client.on("interactionCreate", async (interaction) => {
       new ButtonBuilder()
         .setCustomId("java")
         .setLabel("Java Edition")
-        .setEmoji("☕")
+        .setEmoji("💻")
         .setStyle(ButtonStyle.Primary),
 
       new ButtonBuilder()
