@@ -45,13 +45,12 @@ client.on("messageCreate", async (message) => {
 ⚠ Rules:
 
 💻 Java Edition:
-✔ Example: Notch
+✔ Example: DAREQUE3N
 
 📱 Bedrock / Pocket Edition:
 • Join the server once before applying
 
-✔ Example:
-FZ B0Y
+✔ Example: "DAREQUE3N"
 
 📌 Payment Status:
 Confirm / Pending / Incomplete
