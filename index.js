@@ -29,34 +29,37 @@ client.once("ready", () => {
 
 
 // =========================
-// SAY COMMAND
-// =========================
-if (message.content.startsWith("/say ")) {
-
-  if (
-    !message.member.permissions.has(
-      PermissionsBitField.Flags.Administrator
-    )
-  ) {
-    return message.reply("❌ Administrator only command.");
-  }
-
-  const text = message.content.slice(5).trim();
-
-  if (!text) {
-    return message.reply("❌ Please provide a message.");
-  }
-
-  await message.delete().catch(() => {});
-
-  await message.channel.send(text);
-}
-// =========================
 // WHITELIST PANEL
 // =========================
 client.on("messageCreate", async (message) => {
 
   if (message.author.bot) return;
+  
+  // =========================
+  // SAY COMMAND
+  // =========================
+  if (message.content.startsWith("/say ")) {
+
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+      return message.reply("❌ Administrator only command.");
+    }
+
+    const text = message.content.slice(5).trim();
+
+    if (!text) {
+      return message.reply("❌ Please provide a message.");
+    }
+
+    await message.delete().catch(() => {});
+
+    await message.channel.send(text);
+
+    return;
+  }
 
   if (message.content === "/whitelist setup") {
 
