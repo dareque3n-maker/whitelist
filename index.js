@@ -24,203 +24,543 @@ const client = new Client({
 });
 
 client.once("ready", () => {
-  console.log(`✅ ShadowMc Bot Online: ${client.user.tag}`);
+  console.log(`⚡ ShadowMc Verification Bot Online : ${client.user.tag}`);
 });
 
+// =========================
+// MESSAGE COMMANDS
+// =========================
 
-// =========================
-// PANEL
-// =========================
 client.on("messageCreate", async (message) => {
+
   if (message.author.bot) return;
+
+  // =========================
+  // SAY
+  // =========================
+
+  if (message.content.startsWith("/say ")) {
+
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+      return message.reply("❌ Administrator Only.");
+    }
+
+    const text = message.content.slice(5).trim();
+
+    if (!text) {
+      return message.reply("❌ Enter a message.");
+    }
+
+    await message.delete().catch(() => {});
+
+    await message.channel.send(text);
+
+    return;
+  }
+
+  // =========================
+  // WHITELIST PANEL
+  // =========================
 
   if (message.content === "/whitelist setup") {
 
     const embed = new EmbedBuilder()
-      .setTitle("⚡ ShadowMc Whitelist System")
+
+      .setColor("Gold")
+
+      .setTitle("⚡ ShadowMc Whitelist Access")
+
       .setDescription(`
-💰 Fee: **₹45**
 
----
+╔════════════════════╗
+        ⚡ SHADOWMC
+     WHITELIST ACCESS
+╚════════════════════╝
 
-💻 **Java Edition**
-✔ Username format: DAREQUEEN
-✔ Direct username apply
+💰 Entry Fee
+> ₹45
 
----
+━━━━━━━━━━━━━━━━━━
 
-📱 **Bedrock / PE**
-✔ Username format: "DAREQUEEN"
-✔ Quotes optional but recommended
+💻 JAVA EDITION
 
----
+✔ Enter your normal Minecraft username.
 
-⚠ Enter correct payment code after payment
-`)
-      .setColor("Gold");
+Example:
+DAREQUEEN
 
-    const btn = new ButtonBuilder()
+━━━━━━━━━━━━━━━━━━
+
+📱 BEDROCK / PE
+
+✔ Enter your gamertag inside double quotes.
+
+Example:
+"DAREQUEEN"
+
+━━━━━━━━━━━━━━━━━━
+
+💳 PAYMENT STATUS
+
+• Confirm
+• Guest
+• Pending
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 PAYMENT VERIFICATION
+
+Enter the verification code received after payment.
+
+⚠ Invalid verification code will instantly deny your application.
+
+━━━━━━━━━━━━━━━━━━
+
+🎉 Press the button below to begin verification.
+`);
+
+    const button = new ButtonBuilder()
+
       .setCustomId("apply")
+
       .setLabel("Start Verification")
+
+      .setEmoji("⚡")
+
       .setStyle(ButtonStyle.Success);
 
-    return message.channel.send({
+    await message.channel.send({
+
       embeds: [embed],
-      components: [new ActionRowBuilder().addComponents(btn)]
+
+      components: [
+        new ActionRowBuilder()
+          .addComponents(button)
+      ]
+
     });
+
+    return;
   }
+
 });
-
-
 // =========================
-// INTERACTION
+// INTERACTIONS
 // =========================
+
 client.on("interactionCreate", async (interaction) => {
 
-  // APPLY
-  if (interaction.isButton() && interaction.customId === "apply") {
+  // =========================
+  // START BUTTON
+  // =========================
+
+  if (
+    interaction.isButton() &&
+    interaction.customId === "apply"
+  ) {
+
+    // ONE ACTIVE TICKET
+
+    const already = interaction.guild.channels.cache.find(c =>
+      c.parentId === "1514652770874163472" &&
+      c.name === `verify-${interaction.user.id}`
+    );
+
+    if (already) {
+      return interaction.reply({
+        content:
+          "❌ You already have an active verification ticket.",
+        ephemeral: true
+      });
+    }
 
     const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("java").setLabel("Java").setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId("bedrock").setLabel("Bedrock").setStyle(ButtonStyle.Success)
+
+      new ButtonBuilder()
+        .setCustomId("java")
+        .setLabel("Java Edition")
+        .setEmoji("💻")
+        .setStyle(ButtonStyle.Primary),
+
+      new ButtonBuilder()
+        .setCustomId("bedrock")
+        .setLabel("Bedrock / PE")
+        .setEmoji("📱")
+        .setStyle(ButtonStyle.Success)
+
     );
 
     return interaction.reply({
-      content: "Choose Edition 👇",
+      content:
+        "🎮 Select your Minecraft Edition.",
       components: [row],
       ephemeral: true
     });
   }
 
+  // =========================
+  // JAVA / BEDROCK
+  // =========================
 
-  // MODAL OPEN
-  if (interaction.isButton() && (interaction.customId === "java" || interaction.customId === "bedrock")) {
+  if (
+    interaction.isButton() &&
+    (
+      interaction.customId === "java" ||
+      interaction.customId === "bedrock"
+    )
+  ) {
 
-    const modal = new ModalBuilder()
-      .setCustomId(`form_${interaction.customId}`)
-      .setTitle("Whitelist Form");
+    const edition =
+      interaction.customId;
 
-    const mc = new TextInputBuilder()
-      .setCustomId("mc")
-      .setLabel("Minecraft Username")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true);
+    const modal =
+      new ModalBuilder()
 
-    const pay = new TextInputBuilder()
-      .setCustomId("pay")
-      .setLabel("Payment Status (confirm/pending/incomplete)")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true);
+        .setCustomId(
+          `form_${edition}`
+        )
 
-    const code = new TextInputBuilder()
-      .setCustomId("code")
-      .setLabel("Verification Code")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true);
+        .setTitle(
+          "ShadowMc Verification"
+        );
+
+    const mcname =
+      new TextInputBuilder()
+
+        .setCustomId("mc")
+
+        .setLabel(
+          edition === "java"
+            ? "Minecraft Username"
+            : 'Bedrock Username ("NAME")'
+        )
+
+        .setStyle(
+          TextInputStyle.Short
+        )
+
+        .setRequired(true);
+
+    const payment =
+      new TextInputBuilder()
+
+        .setCustomId("pay")
+
+        .setLabel(
+          "Payment Status"
+        )
+
+        .setPlaceholder(
+          "Confirm / Guest / Pending"
+        )
+
+        .setStyle(
+          TextInputStyle.Short
+        )
+
+        .setRequired(true);
+
+    const code =
+      new TextInputBuilder()
+
+        .setCustomId("code")
+
+        .setLabel(
+          "Verification Code"
+        )
+
+        .setStyle(
+          TextInputStyle.Short
+        )
+
+        .setRequired(true);
 
     modal.addComponents(
-      new ActionRowBuilder().addComponents(mc),
-      new ActionRowBuilder().addComponents(pay),
-      new ActionRowBuilder().addComponents(code)
+
+      new ActionRowBuilder()
+        .addComponents(mcname),
+
+      new ActionRowBuilder()
+        .addComponents(payment),
+
+      new ActionRowBuilder()
+        .addComponents(code)
+
     );
 
-    return interaction.showModal(modal);
+    return interaction.showModal(
+      modal
+    );
   }
 
-
+  // =========================
   // FORM SUBMIT
-  if (interaction.isModalSubmit() && interaction.customId.startsWith("form_")) {
+  // =========================
 
-    const edition = interaction.customId.split("_")[1];
+  if (
+    interaction.isModalSubmit() &&
+    interaction.customId.startsWith(
+      "form_"
+    )
+  ) {
 
-    let mcname = interaction.fields.getTextInputValue("mc").trim();
-    const payment = interaction.fields.getTextInputValue("pay").toLowerCase();
-    const code = interaction.fields.getTextInputValue("code").trim();
+    const edition =
+      interaction.customId
+      .split("_")[1];
 
-    const valid = ["confirm", "pending", "incomplete"].includes(payment);
-    const codeValid = code === config.paymentCode;
+    const mcname =
+      interaction.fields
+      .getTextInputValue("mc")
+      .trim();
 
-    let status = "⚠ Not Verified";
-    let color = "Orange";
+    const payment =
+      interaction.fields
+      .getTextInputValue("pay")
+      .trim()
+      .toLowerCase();
 
-    if (valid && payment === "confirm" && codeValid) {
-      status = "✔ Verified";
-      color = "Green";
-    } else if (!codeValid) {
-      status = "❌ Invalid Code";
-      color = "Red";
+    const code =
+      interaction.fields
+      .getTextInputValue("code")
+      .trim();
+
+    // PAYMENT STATUS
+
+    const validPayment = [
+      "confirm",
+      "guest",
+      "pending"
+    ].includes(payment);
+
+    if (!validPayment) {
+      return interaction.reply({
+        content:
+          "❌ Invalid payment status.",
+        ephemeral: true
+      });
     }
 
+    // CODE CHECK
 
-    // BEDROCK FORMAT FIX
-    if (edition === "bedrock") {
-      mcname = `"${mcname}"`;
+    if (
+      code !==
+      config.paymentCode
+    ) {
+      return interaction.reply({
+        content:
+          "❌ Invalid payment verification code.",
+        ephemeral: true
+      });
     }
 
+    // BEDROCK FORMAT
 
-    const ticket = await interaction.guild.channels.create({
-      name: `verify-${interaction.user.username}`,
-      type: ChannelType.GuildText,
-      parent: config.ticketCategoryId,
+    if (
+      edition === "bedrock"
+    ) {
 
-      permissionOverwrites: [
-        {
-          id: interaction.guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel]
-        },
-        {
-          id: interaction.user.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ]
-        },
-        {
-          id: config.adminRoleId,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ]
-        }
-      ]
-    });
+      if (
+        !mcname.startsWith('"') ||
+        !mcname.endsWith('"')
+      ) {
+        return interaction.reply({
+          content:
+            '❌ Bedrock username must be like "DAREQUEEN"',
+          ephemeral: true
+        });
+      }
+    }
 
+    // CREATE TICKET
 
-    const embed = new EmbedBuilder()
-      .setTitle("🔐 Whitelist Ticket")
-      .setColor(color)
+    const ticket =
+      await interaction.guild
+      .channels.create({
+
+        name:
+          `verify-${interaction.user.id}`,
+
+        type:
+          ChannelType.GuildText,
+
+        parent:
+          "1514652770874163472",
+
+        permissionOverwrites: [
+
+          {
+            id:
+              interaction.guild.id,
+
+            deny: [
+              PermissionsBitField
+              .Flags
+              .ViewChannel
+            ]
+          },
+
+          {
+            id:
+              interaction.user.id,
+
+            allow: [
+              PermissionsBitField
+              .Flags
+              .ViewChannel,
+
+              PermissionsBitField
+              .Flags
+              .SendMessages
+            ]
+          },
+
+          {
+            id:
+              config.adminRoleId,
+
+            allow: [
+              PermissionsBitField
+              .Flags
+              .ViewChannel,
+
+              PermissionsBitField
+              .Flags
+              .SendMessages
+            ]
+          }
+
+        ]
+
+      });
+
+    const embed =
+      new EmbedBuilder()
+
+      .setColor("Gold")
+
+      .setTitle(
+        "⚡ ShadowMc Verification Ticket"
+      )
+
+      .setDescription(
+        "A new whitelist application has been received."
+      )
+
       .addFields(
-        { name: "Username", value: mcname },
-        { name: "Edition", value: edition },
-        { name: "Payment", value: "₹45" },
-        { name: "Status", value: status }
+
+        {
+          name:
+            "👤 Applicant",
+
+          value:
+            `<@${interaction.user.id}>`
+        },
+
+        {
+          name:
+            "🎮 Username",
+
+          value:
+            mcname
+        },
+
+        {
+          name:
+            "🖥 Edition",
+
+          value:
+            edition
+        },
+
+        {
+          name:
+            "💳 Payment",
+
+          value:
+            payment
+        },
+
+        {
+          name:
+            "🔑 Code",
+
+          value:
+            "✅ Verified"
+        }
+
       );
 
+    const approve =
+      new ButtonBuilder()
 
-    const approve = new ButtonBuilder()
-      .setCustomId(`approve_${interaction.user.id}`)
-      .setLabel("Approve")
-      .setStyle(ButtonStyle.Success);
+      .setCustomId(
+        `approve_${interaction.user.id}`
+      )
 
-    const reject = new ButtonBuilder()
-      .setCustomId(`reject_${interaction.user.id}`)
-      .setLabel("Reject")
-      .setStyle(ButtonStyle.Danger);
+      .setLabel(
+        "Approve"
+      )
 
+      .setEmoji("✅")
+
+      .setStyle(
+        ButtonStyle.Success
+      );
+
+    const reject =
+      new ButtonBuilder()
+
+      .setCustomId(
+        `reject_${interaction.user.id}`
+      )
+
+      .setLabel(
+        "Reject"
+      )
+
+      .setEmoji("❌")
+
+      .setStyle(
+        ButtonStyle.Danger
+      );
 
     await ticket.send({
+
+      content:
+        `<@&${config.adminRoleId}>`,
+
       embeds: [embed],
-      components: [new ActionRowBuilder().addComponents(approve, reject)]
+
+      components: [
+
+        new ActionRowBuilder()
+        .addComponents(
+          approve,
+          reject
+        )
+
+      ]
+
     });
 
-    return interaction.reply({
-      content: `🎟 Ticket Created`,
+    await interaction.reply({
+
+      content:
+        `✅ Verification ticket created: ${ticket}`,
+
       ephemeral: true
+
     });
   }
 
-
+  // =========================
   // APPROVE / REJECT
+  // =========================
+
   if (interaction.isButton()) {
 
     if (
@@ -228,52 +568,255 @@ client.on("interactionCreate", async (interaction) => {
       interaction.customId.startsWith("reject_")
     ) {
 
-      if (!interaction.member.roles.cache.has(config.adminRoleId)) {
-        return interaction.reply({ content: "❌ Staff only", ephemeral: true });
+      // STAFF CHECK
+
+      if (
+        !interaction.member.roles.cache.has(
+          config.adminRoleId
+        )
+      ) {
+        return interaction.reply({
+          content: "❌ Staff Only.",
+          ephemeral: true
+        });
       }
 
-      const userId = interaction.customId.split("_")[1];
-      const embed = interaction.message.embeds[0];
-      const mcname = embed.fields[0].value;
-      const edition = embed.fields[1].value;
+      const userId =
+        interaction.customId.split("_")[1];
 
-      const user = await client.users.fetch(userId).catch(() => null);
+      const user =
+        await client.users
+          .fetch(userId)
+          .catch(() => null);
 
+      const embed =
+        interaction.message.embeds[0];
 
-      // APPROVE MESSAGE (PREMIUM)
-      if (interaction.customId.startsWith("approve_")) {
+      const mcname =
+        embed.fields[1].value;
 
-        if (edition === "java") {
-          consoleChannel?.send(`whitelist add ${mcname}`);
+      const edition =
+        embed.fields[2].value;
+
+      // LOG CHANNEL
+
+      const logChannel =
+        await client.channels
+          .fetch(config.logChannelId)
+          .catch(() => null);
+
+      // CONSOLE CHANNEL
+
+      const consoleChannel =
+        await client.channels
+          .fetch(config.consoleChannelId)
+          .catch(() => null);
+
+      // =========================
+      // APPROVE
+      // =========================
+
+      if (
+        interaction.customId.startsWith(
+          "approve_"
+        )
+      ) {
+
+        // JAVA
+
+        if (
+          edition === "java"
+        ) {
+
+          if (consoleChannel) {
+
+            await consoleChannel.send(
+              `whitelist add ${mcname}`
+            );
+
+          }
+
         }
 
-        if (edition === "bedrock") {
-          consoleChannel?.send(`fwhitelist add ${mcname}`);
+        // BEDROCK
+
+        if (
+          edition === "bedrock"
+        ) {
+
+          if (consoleChannel) {
+
+            await consoleChannel.send(
+              `fwhitelist add ${mcname}`
+            );
+
+          }
+
         }
 
-        user?.send(
-`🎉 WHITELIST APPROVED!
+        // DM
 
-👤 Username: ${mcname}
-🖥 Edition: ${edition}
-💰 Status: VERIFIED
-⚡ You can now join the server
+        if (user) {
 
-Welcome to ShadowMc 🚀`
-        ).catch(() => {});
+          user.send(`
 
-        return interaction.reply("✅ Approved");
+🎉━━━━━━━━━━━━━━━━━━🎉
+
+        ⚡ SHADOWMC ⚡
+
+━━━━━━━━━━━━━━━━━━━━
+
+🥳 Congratulations!
+
+Your whitelist application has been approved.
+
+👤 Username:
+${mcname}
+
+🎮 Edition:
+${edition}
+
+✅ Status:
+Whitelisted Successfully
+
+🌍 You can now join ShadowMc and start your adventure.
+
+❤️ Thank you for supporting the server.
+
+⚡ Welcome to the ShadowMc Community!
+
+🎉━━━━━━━━━━━━━━━━━━🎉
+
+          `).catch(() => {});
+        }
+
+        // LOG
+
+        if (logChannel) {
+
+          logChannel.send(`
+
+🟢 WHITELIST APPROVED
+
+👤 Player:
+${mcname}
+
+🎮 Edition:
+${edition}
+
+👮 Approved By:
+<@${interaction.user.id}>
+
+          `);
+
+        }
+
+        await interaction.reply({
+
+          content: `
+
+✅ Application Approved!
+
+⚡ Sending whitelist command...
+
+📨 Sending confirmation...
+
+🗑 Ticket will close in 3 seconds.
+
+          `
+
+        });
+
+        setTimeout(() => {
+
+          interaction.channel
+            .delete()
+            .catch(() => {});
+
+        }, 3000);
+
       }
 
-
+      // =========================
       // REJECT
-      if (interaction.customId.startsWith("reject_")) {
+      // =========================
 
-        user?.send(`❌ Your whitelist request was rejected`).catch(() => {});
-        return interaction.reply("❌ Rejected");
+      if (
+        interaction.customId.startsWith(
+          "reject_"
+        )
+      ) {
+
+        if (user) {
+
+          user.send(`
+
+❌━━━━━━━━━━━━━━━━━━❌
+
+       ⚡ SHADOWMC ⚡
+
+━━━━━━━━━━━━━━━━━━━━
+
+Your whitelist application was not approved.
+
+If you think this was a mistake,
+
+please contact our staff team.
+
+Thank you for applying.
+
+❌━━━━━━━━━━━━━━━━━━❌
+
+          `).catch(() => {});
+        }
+
+        if (logChannel) {
+
+          logChannel.send(`
+
+🔴 WHITELIST REJECTED
+
+👤 Player:
+${mcname}
+
+🎮 Edition:
+${edition}
+
+👮 Rejected By:
+<@${interaction.user.id}>
+
+          `);
+
+        }
+
+        await interaction.reply({
+
+          content: `
+
+❌ Application Rejected.
+
+📨 User notified.
+
+🗑 Ticket will close in 3 seconds.
+
+          `
+
+        });
+
+        setTimeout(() => {
+
+          interaction.channel
+            .delete()
+            .catch(() => {});
+
+        }, 3000);
+
       }
+
     }
+
   }
+
 });
 
 client.login(process.env.TOKEN);
