@@ -381,64 +381,47 @@ const already = interaction.guild.channels.cache.find(c =>
 
     // CREATE TICKET
 
-    const ticketName = interaction.member.displayName
+const ticketName = interaction.member.displayName
   .toLowerCase()
   .replace(/[^a-z0-9]/g, "-");
 
-name: `verify-${ticketName}`,
+const ticket =
+  await interaction.guild.channels.create({
 
-        type:
-          ChannelType.GuildText,
+    name: `verify-${ticketName}`,
 
-        parent: config.ticketCategoryId,
+    type: ChannelType.GuildText,
 
-        permissionOverwrites: [
+    parent: config.ticketCategoryId,
 
-          {
-            id:
-              interaction.guild.id,
+    permissionOverwrites: [
 
-            deny: [
-              PermissionsBitField
-              .Flags
-              .ViewChannel
-            ]
-          },
-
-          {
-            id:
-              interaction.user.id,
-
-            allow: [
-              PermissionsBitField
-              .Flags
-              .ViewChannel,
-
-              PermissionsBitField
-              .Flags
-              .SendMessages
-            ]
-          },
-
-          {
-            id:
-              config.adminRoleId,
-
-            allow: [
-              PermissionsBitField
-              .Flags
-              .ViewChannel,
-
-              PermissionsBitField
-              .Flags
-              .SendMessages
-            ]
-          }
-
+      {
+        id: interaction.guild.id,
+        deny: [
+          PermissionsBitField.Flags.ViewChannel
         ]
+      },
 
-      });
+      {
+        id: interaction.user.id,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages
+        ]
+      },
 
+      {
+        id: config.adminRoleId,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages
+        ]
+      }
+
+    ]
+
+  });
     const embed =
       new EmbedBuilder()
 
