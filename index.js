@@ -165,10 +165,14 @@ client.on("interactionCreate", async (interaction) => {
 
     // ONE ACTIVE TICKET
 
-    const already = interaction.guild.channels.cache.find(c =>
-      c.parentId === "1514652770874163472" &&
-      c.name === `verify-${interaction.user.id}`
-    );
+    const ticketName = interaction.member.displayName
+  .toLowerCase()
+  .replace(/[^a-z0-9-]/g, "-");
+
+const already = interaction.guild.channels.cache.find(c =>
+  c.parentId === config.ticketCategoryId &&
+  c.name === `verify-${ticketName}`
+);
 
     if (already) {
       return interaction.reply({
