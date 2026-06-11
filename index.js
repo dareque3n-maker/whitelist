@@ -381,11 +381,11 @@ const already = interaction.guild.channels.cache.find(c =>
 
     // CREATE TICKET
 
-    const ticket =
-      await interaction.guild
-      .channels.create({
+    const ticketName = interaction.member.displayName
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g, "-");
 
-        name: `verify-${interaction.user.displayName}`
+name: `verify-${ticketName}`,
 
         type:
           ChannelType.GuildText,
