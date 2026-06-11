@@ -387,8 +387,7 @@ client.on("interactionCreate", async (interaction) => {
         type:
           ChannelType.GuildText,
 
-        parent:
-          "1514652770874163472",
+        parent: config.ticketCategoryId,
 
         permissionOverwrites: [
 
