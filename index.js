@@ -66,7 +66,7 @@ client.on("messageCreate", async (message) => {
     const embed = new EmbedBuilder()
       .setTitle("⚡ ShadowMc Whitelist Gate")
       .setDescription(`
-💰 Fee: **₹35**
+💰 Fee: **₹45**
 
 ⚠ Rules:
 
@@ -234,27 +234,39 @@ client.on("interactionCreate", async (interaction) => {
     // CREATE TICKET
     // =========================
     const ticket = await interaction.guild.channels.create({
-      name: `verify-${interaction.user.username}`,
-      type: ChannelType.GuildText,
+    const ticket = await interaction.guild.channels.create({
+  name: `verify-${interaction.user.username}`,
+  type: ChannelType.GuildText,
 
-      permissionOverwrites: [
+  parent: "1514652770874163472",
 
-        {
-          id: interaction.guild.id,
-          deny: [
-            PermissionsBitField.Flags.ViewChannel
-          ]
-        },
+  permissionOverwrites: [
 
-        {
-          id: interaction.user.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ]
-        }
+    {
+      id: interaction.guild.id,
+      deny: [
+        PermissionsBitField.Flags.ViewChannel
       ]
-    });
+    },
+
+    {
+      id: interaction.user.id,
+      allow: [
+        PermissionsBitField.Flags.ViewChannel,
+        PermissionsBitField.Flags.SendMessages
+      ]
+    },
+
+    {
+      id: config.adminRoleId,
+      allow: [
+        PermissionsBitField.Flags.ViewChannel,
+        PermissionsBitField.Flags.SendMessages,
+        PermissionsBitField.Flags.ReadMessageHistory
+      ]
+    }
+  ]
+});
 
 
     // =========================
