@@ -381,8 +381,7 @@ client.on("interactionCreate", async (interaction) => {
       await interaction.guild
       .channels.create({
 
-        name:
-          `verify-${interaction.user.id}`,
+        name: `verify-${interaction.user.displayName}`
 
         type:
           ChannelType.GuildText,
